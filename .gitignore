@@ -1,0 +1,39 @@
+# Virtual environments & caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local model weights (Kokoro ONNX ~300 MB downloaded on demand)
+models/
+
+# Local captured sessions & personal/generated SOPs
+sessions/*
+!sessions/.gitkeep
+
+workflows/*/
+*.mp4
+*.mkv
+*.wav
+*.mp3
+*.docx
+*.pdf
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+.video_cache/
+
+# Logs, OS & editor metadata
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

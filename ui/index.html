@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabGuide Studio | Jesse in the Lab</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-header">
+      <div class="brand">
+        <img src="/brand/logo.png" alt="Jesse in the Lab logo" width="56" height="56" class="brand-logo" />
+        <div>
+          <div class="brand-title-row">
+            <h1>LabGuide Studio</h1>
+            <span class="publisher-badge">by Jesse in the Lab &middot; v3.0.0</span>
+          </div>
+          <p class="subtitle">100% Local Windows 11 Workflow Recorder, Electronic-to-Video SOP Suite &amp; Ollama VLM Editor</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="status-pills" aria-live="polite">
+          <span id="pill-recorder" class="pill pill-idle">Recorder: Idle</span>
+          <span id="pill-ollama" class="pill pill-muted">Ollama: Checking...</span>
+          <span id="pill-staging" class="pill pill-muted">Drafts: 0</span>
+        </div>
+        <div class="header-meta-actions">
+          <button type="button" id="btn-toggle-backdrop" class="btn btn-ghost btn-sm" aria-pressed="true">
+            Lab Backdrop
+          </button>
+          <button type="button" id="btn-open-about" class="btn btn-outline btn-sm">
+            About &amp; License
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="folder-bar" aria-label="Quick folder links and workspace checks">
+      <button type="button" class="btn btn-ghost" data-open-folder="workflows">
+        Open Saved Workflows Folder
+      </button>
+      <button type="button" class="btn btn-ghost" data-open-folder="staging">
+        Open Staging Drafts Folder
+      </button>
+      <button type="button" class="btn btn-ghost" data-open-folder="sessions">
+        Open Legacy Sessions Folder
+      </button>
+      <button type="button" class="btn btn-ghost" data-open-folder="skill_dir">
+        Open Skill Folder
+      </button>
+      <button type="button" id="btn-refresh-preflight" class="btn btn-outline">
+        Refresh System Check
+      </button>
+      <a id="link-official-guide" class="btn btn-accent is-disabled" href="#" target="_blank" rel="noopener" aria-disabled="true">
+        Visual &amp; Voice SOP Guide
+      </a>
+    </nav>
+
+    <main>
+      <div class="tabs-wrapper">
+        <div class="tablist" focusgroup="tablist nomemory" role="tablist" aria-label="LabGuide Studio Sections">
+          <button type="button" role="tab" id="tab-capture" aria-selected="true" focusgroupstart data-panel="panel-capture">
+            Capture Studio
+          </button>
+          <button type="button" role="tab" id="tab-video-studio" aria-selected="false" data-panel="panel-video-studio">
+            Electronic &amp; Video Studio
+          </button>
+          <button type="button" role="tab" id="tab-review" aria-selected="false" data-panel="panel-review">
+            Review &amp; Step Editor <span id="badge-review-count" class="tab-badge" hidden>0</span>
+          </button>
+          <button type="button" role="tab" id="tab-library" aria-selected="false" data-panel="panel-library">
+            Saved Workflows <span id="badge-saved-count" class="tab-badge">0</span>
+          </button>
+          <button type="button" role="tab" id="tab-readiness" aria-selected="false" data-panel="panel-readiness">
+            System Readiness
+          </button>
+          <button type="button" role="tab" id="tab-help" aria-selected="false" data-panel="panel-help">
+            Help &amp; Pro Guide
+          </button>
+        </div>
+
+        <div class="tab-panels">
+          <!-- TAB 1: CAPTURE STUDIO -->
+          <section id="panel-capture" class="tab-panel" role="tabpanel" aria-labelledby="tab-capture" tabindex="0">
+            <div class="panel-surface">
+              <div class="grid-two">
+                <div class="card">
+                  <h2>New Workflow Recording</h2>
+                  <p class="hint">
+                    New recordings are saved to <strong>Staging</strong> first (<code>sessions/_staging/</code>) so you can inspect, edit, blur, or discard misclicks before promoting them to Saved Workflows.
+                  </p>
+
+                  <form id="record-form" class="form-stack">
+                    <div class="field">
+                      <label for="rec-title">Guide Title</label>
+                      <input type="text" id="rec-title" name="title" required value="Standard Operating Procedure" placeholder="e.g., Configure Windows Firewall Inbound Rules" />
+                      <span class="hint">Leave as default to auto-name from the first target app (e.g., <code>SOP - Firewall (2026-11-24)</code>).</span>
+                    </div>
+
+                    <div class="field-row">
+                      <div class="field">
+                        <label for="rec-model">Ollama Vision Model</label>
+                        <select id="rec-model" name="model" class="brand-select">
+                          <button type="button"><selectedcontent></selectedcontent></button>
+                          <option value="gemma4:e4b" selected>gemma4:e4b (Recommended Local VLM)</option>
+                          <option value="qwen2.5-vl:7b">qwen2.5-vl:7b</option>
+                        </select>
+                        <span class="hint">8 GB VRAM tip: <code>keep_alive="0"</code> unloads the VLM immediately after compile.</span>
+                      </div>
+
+                      <div class="field">
+                        <label for="rec-countdown">Start Delay</label>
+                        <select id="rec-countdown" name="countdown_seconds" class="brand-select">
+                          <button type="button"><selectedcontent></selectedcontent></button>
+                          <option value="3" selected>3-Second Countdown (Recommended)</option>
+                          <option value="5">5-Second Countdown</option>
+                          <option value="0">Immediate Start</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="field-row">
+                      <div class="field">
+                        <label for="rec-post-action">When Recording Stops</label>
+                        <select id="rec-post-action" name="auto_compile" class="brand-select">
+                          <button type="button"><selectedcontent></selectedcontent></button>
+                          <option value="false" selected>Instant Draft &rarr; Review First (0s, 0 MB VRAM)</option>
+                          <option value="true">Auto-Compile All Steps with Ollama VLM</option>
+                        </select>
+                      </div>
+
+                      <div class="field">
+                        <label for="rec-style">AI Writing Style</label>
+                        <select id="rec-style" name="prompt_style" class="brand-select">
+                          <button type="button"><selectedcontent></selectedcontent></button>
+                          <option value="concise" selected>Concise SOP (1 crisp imperative sentence)</option>
+                          <option value="detailed">Detailed Tutorial (2 sentences + context tip)</option>
+                          <option value="troubleshooting">Troubleshooting Runbook (checks &amp; warnings)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <details class="advanced-box">
+                      <summary>Advanced Capture, Privacy &amp; VRAM Options</summary>
+                      <div class="advanced-body">
+                        <label class="checkbox-row" for="rec-hud">
+                          <input type="checkbox" id="rec-hud" checked />
+                          <span>Show floating always-on-top Mini-HUD (hidden from screenshots via Windows 11 capture exclusion)</span>
+                        </label>
+                        <label class="checkbox-row" for="rec-exclude-self">
+                          <input type="checkbox" id="rec-exclude-self" checked />
+                          <span>Ignore clicks on LabGuide Studio &amp; Mini-HUD (self-click filter)</span>
+                        </label>
+                        <label class="checkbox-row" for="rec-coalesce-typing">
+                          <input type="checkbox" id="rec-coalesce-typing" checked />
+                          <span>Coalesce form typing into 1 step &amp; mask passwords/tokens/keys as <code>••••••••</code></span>
+                        </label>
+                        <label class="checkbox-row" for="rec-redact">
+                          <input type="checkbox" id="rec-redact" checked />
+                          <span>Auto-redact PII locally on CPU (emails, IPv4, API tokens, SSNs via RapidOCR)</span>
+                        </label>
+                        <label class="checkbox-row" for="rec-shortcuts">
+                          <input type="checkbox" id="rec-shortcuts" checked />
+                          <span>Capture key shortcuts (<code>Ctrl+S</code>, <code>Ctrl+C</code>, <code>Ctrl+V</code>, <code>Ctrl+Z</code>, <code>Ctrl+F</code>)</span>
+                        </label>
+                        <label class="checkbox-row" for="rec-keep-alive">
+                          <input type="checkbox" id="rec-keep-alive" checked />
+                          <span>Auto-unload Ollama model from VRAM after compile (<code>keep_alive="0"</code>)</span>
+                        </label>
+                        <div class="field">
+                          <label for="rec-ollama-url">Local Ollama URL</label>
+                          <input type="url" id="rec-ollama-url" value="http://localhost:11434" />
+                        </div>
+                      </div>
+                    </details>
+
+                    <div class="action-row">
+                      <button type="button" id="btn-start-record" class="btn btn-primary">
+                        Start Recording
+                      </button>
+                      <button type="button" id="btn-pause-record" class="btn btn-secondary" disabled>
+                        Pause (Ctrl+Alt+P)
+                      </button>
+                      <button type="button" id="btn-stop-record" class="btn btn-danger" disabled>
+                        Stop &amp; Review (Ctrl+Alt+S)
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div class="card">
+                  <h2>Live Capture Feed &amp; Hotkeys</h2>
+                  <div id="live-banner" class="live-banner">
+                    Ready to record. Click <strong>Start Recording</strong>, switch to your target Windows app during the countdown, and click through your workflow.
+                  </div>
+
+                  <div class="hotkey-grid">
+                    <div class="hotkey-item">
+                      <kbd>Ctrl + Alt + P</kbd>
+                      <span>Pause / Resume before typing passwords or private data</span>
+                    </div>
+                    <div class="hotkey-item">
+                      <kbd>Ctrl + Alt + S</kbd>
+                      <span>Stop recording and open the Review &amp; Step Editor</span>
+                    </div>
+                  </div>
+
+                  <h3>Captured Steps (Current Session)</h3>
+                  <ul id="live-steps-list" class="live-steps-list">
+                    <li class="empty-note">No active capture yet.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- TAB 1B: ELECTRONIC & VIDEO SOP STUDIO -->
+          <section id="panel-video-studio" class="tab-panel" role="tabpanel" aria-labelledby="tab-video-studio" hidden="until-found">
+            <div class="panel-surface">
+              <div class="grid-two">
+                <div class="card">
+                  <h2>Import / Author Electronic SOP</h2>
+                  <p class="hint">
+                    Convert Markdown, Word (<code>.docx</code>), PDF, or pasted text into 1920&times;1080 dark-mode visual slides inside Staging. Insert <code>[pause 1s]</code> tags for natural narrator pacing.
+                  </p>
+                  <form id="electronic-import-form" class="form-stack">
+                    <div class="field">
+                      <label for="imp-title">SOP Title</label>
+                      <input type="text" id="imp-title" value="Electronic SOP" placeholder="e.g., Production Incident Escalation Runbook" />
+                    </div>
+                    <div class="field-row">
+                      <div class="field">
+                        <label for="imp-doc-id">Document ID (ISO Header)</label>
+                        <input type="text" id="imp-doc-id" placeholder="e.g., SOP-OPS-2026-01" />
+                      </div>
+                      <div class="field">
+                        <label for="imp-owner">Document Owner</label>
+                        <input type="text" id="imp-owner" value="Jesse in the Lab" />
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="imp-file">Upload Document (.md, .txt, .docx, .pdf)</label>
+                      <input type="file" id="imp-file" accept=".md,.txt,.docx,.pdf" />
+                    </div>
+                    <div class="field">
+                      <label for="imp-raw-text">Or Paste / Author Raw SOP Steps</label>
+                      <textarea id="imp-raw-text" placeholder="1. Verify service health on port 8897. [pause 1s]&#10;2. Review Staging draft before saving to library."></textarea>
+                    </div>
+                    <div class="field">
+                      <label for="imp-parser-mode">Step Structuring Engine</label>
+                      <select id="imp-parser-mode" class="brand-select">
+                        <button type="button"><selectedcontent></selectedcontent></button>
+                        <option value="true" selected>Local Ollama JSON Splitter (gemma4:e4b, keep_alive="0")</option>
+                        <option value="false">Instant Deterministic Parser (0 MB GPU VRAM)</option>
+                      </select>
+                    </div>
+                    <div class="action-row">
+                      <button type="button" id="btn-import-sop" class="btn btn-primary">
+                        Create Visual Slide SOP
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div class="card">
+                  <h2>Synthesia-Style Video &amp; Neural Voice Producer</h2>
+                  <p class="hint">
+                    Renders 100% locally on CPU (<strong>Kokoro-82M ONNX</strong> + <strong>FFmpeg zoompan</strong> + optional <strong>Legal Presenter PiP</strong>) keeping GPU VRAM free.
+                  </p>
+                  <div class="form-stack">
+                    <div class="field">
+                      <label for="vid-session-select">Target Session / Workflow</label>
+                      <select id="vid-session-select" class="brand-select">
+                        <button type="button"><selectedcontent></selectedcontent></button>
+                        <option value="">-- Choose a staging draft or workflow --</option>
+                      </select>
+                    </div>
+
+                    <div class="field-row">
+                      <div class="field">
+                        <label for="vid-voice">Local Neural Voice (<span id="tts-engine-label">Checking...</span>)</label>
+                        <select id="vid-voice" class="brand-select">
+                          <button type="button"><selectedcontent></selectedcontent></button>
+                          <option value="af_heart" selected>Heart (US Female — Kokoro Neural)</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="vid-speed">Narration Speed</label>
+                        <select id="vid-speed" class="brand-select">
+                          <button type="button"><selectedcontent></selectedcontent></button>
+                          <option value="0.9">0.9x (Measured)</option>
+                          <option value="1.0" selected>1.0x (Natural)</option>
+                          <option value="1.1">1.1x (Brisk)</option>
+                          <option value="1.2">1.2x (Fast)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <fieldset class="radio-group">
+                      <legend>Presenter Mode</legend>
+                      <label class="radio-card">
+                        <input type="radio" name="vid-presenter-mode" value="none" checked />
+                        <span><strong>Voice-Only Visual Tour</strong><br /><small class="hint">Annotated screenshots + zoom-to-click</small></span>
+                      </label>
+                      <label class="radio-card">
+                        <input type="radio" name="vid-presenter-mode" value="pip" />
+                        <span><strong>AI Presenter PiP Bubble</strong><br /><small class="hint">Corner talking avatar synced to speech</small></span>
+                      </label>
+                    </fieldset>
+
+                    <div id="pip-options-box" class="form-stack" hidden>
+                      <div class="field-row">
+                        <div class="field">
+                          <label for="vid-avatar">Studio Presenter Avatar</label>
+                          <select id="vid-avatar" class="brand-select">
+                            <button type="button"><selectedcontent></selectedcontent></button>
+                            <option value="aria_architect" selected>Aria (Systems Architect)</option>
+                          </select>
+                        </div>
+                        <div class="field avatar-preview-wrap">
+                          <img id="vid-avatar-preview" class="avatar-thumb" src="" alt="Selected presenter avatar" />
+                          <button type="button" id="btn-open-avatar-dialog" class="btn btn-outline btn-sm">Upload Custom Avatar</button>
+                        </div>
+                      </div>
+                      <label class="checkbox-row" for="vid-consent">
+                        <input type="checkbox" id="vid-consent" />
+                        <span>I confirm I own or have explicit consent to use this avatar and voice (logged in <code>assets/avatars/manifest.json</code>).</span>
+                      </label>
+                    </div>
+
+                    <label class="checkbox-row" for="vid-zoom">
+                      <input type="checkbox" id="vid-zoom" checked />
+                      <span>Smooth FFmpeg Zoom-to-Click (Ken Burns pan/zoom on click coordinates)</span>
+                    </label>
+                    <label class="checkbox-row" for="vid-captions">
+                      <input type="checkbox" id="vid-captions" checked />
+                      <span>Burn-in bottom captions &amp; generate <code>walkthrough.srt</code></span>
+                    </label>
+
+                    <div class="action-row">
+                      <button type="button" id="btn-render-video" class="btn btn-success">
+                        Render Video SOP (MP4 + SRT)
+                      </button>
+                      <a id="link-rendered-video" class="btn btn-outline is-disabled" href="#" target="_blank" rel="noopener" aria-disabled="true">
+                        Watch Rendered MP4
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- TAB 2: REVIEW & STEP EDITOR -->
+          <section id="panel-review" class="tab-panel" role="tabpanel" aria-labelledby="tab-review" hidden="until-found">
+            <div class="panel-surface">
+              <div class="review-toolbar card">
+                <div class="field review-picker">
+                  <label for="review-session-select">Select Recording / Draft to Review</label>
+                  <select id="review-session-select" class="brand-select">
+                    <button type="button"><selectedcontent></selectedcontent></button>
+                    <option value="">-- Choose a staging draft or workflow --</option>
+                  </select>
+                </div>
+
+                <div class="review-toolbar-actions">
+                  <button type="button" id="btn-ai-compile-all" class="btn btn-accent" disabled>
+                    Run AI Descriptions on All Steps
+                  </button>
+                  <button type="button" id="btn-preview-md" class="btn btn-outline" disabled>
+                    View / Copy Markdown
+                  </button>
+                  <button type="button" id="btn-copy-md-b64" class="btn btn-outline" disabled>
+                    Copy Base64 MD
+                  </button>
+                  <a id="link-preview-html" class="btn btn-outline is-disabled" href="#" target="_blank" rel="noopener" aria-disabled="true">
+                    Open HTML
+                  </a>
+                  <button type="button" id="btn-export-docx" class="btn btn-outline" disabled>
+                    Export .docx
+                  </button>
+                  <button type="button" id="btn-export-pdf" class="btn btn-outline" disabled>
+                    Print / Save .pdf
+                  </button>
+                  <button type="button" id="btn-export-json" class="btn btn-outline" disabled>
+                    Export .json
+                  </button>
+                  <button type="button" id="btn-export-replay" class="btn btn-outline" disabled>
+                    Export replay.py
+                  </button>
+                  <button type="button" id="btn-export-srt" class="btn btn-outline" disabled>
+                    Export .srt
+                  </button>
+                  <button type="button" id="btn-export-offline-zip" class="btn btn-outline" disabled>
+                    Offline Bundle .zip
+                  </button>
+                  <button type="button" id="btn-export-scorm" class="btn btn-accent" disabled>
+                    SCORM 1.2 .zip
+                  </button>
+                  <button type="button" id="btn-open-session-folder" class="btn btn-ghost" disabled>
+                    Open Folder
+                  </button>
+                </div>
+              </div>
+
+              <!-- Post-Completion Decision Gate -->
+              <div id="save-decision-banner" class="decision-banner card" hidden>
+                <div class="decision-info">
+                  <h2 id="decision-heading">Review Before Saving</h2>
+                  <p id="decision-copy">
+                    This recording is currently in <strong>Staging</strong>. Inspect, prune, or blur steps below, then decide whether to save it permanently or discard it.
+                  </p>
+                </div>
+                <div class="decision-controls">
+                  <div class="field">
+                    <label for="save-preset">Save Destination</label>
+                    <select id="save-preset" class="brand-select">
+                      <button type="button"><selectedcontent></selectedcontent></button>
+                      <option value="workflows" selected>Saved Workflows (projects/labguide_studio/workflows)</option>
+                      <option value="directives_sops">Workspace SOPs (directives/sops)</option>
+                      <option value="knowledge_guides">Knowledge Guides (knowledge/guides)</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="save-custom-name">Folder Name Override (Optional)</label>
+                    <input type="text" id="save-custom-name" placeholder="Defaults to timestamp + guide title" />
+                  </div>
+                  <div class="decision-buttons">
+                    <button type="button" id="btn-save-workflow" class="btn btn-success">
+                      Save Workflow to Library
+                    </button>
+                    <button type="button" id="btn-discard-session" class="btn btn-danger">
+                      Discard Draft
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Guide Title Editor -->
+              <div id="editor-title-bar" class="card title-editor" hidden>
+                <div class="field grow">
+                  <label for="edit-guide-title">Workflow Title</label>
+                  <input type="text" id="edit-guide-title" />
+                </div>
+                <button type="button" id="btn-save-title" class="btn btn-primary">
+                  Update Title
+                </button>
+              </div>
+
+              <!-- ISO Compliance Header & Quiz Generator -->
+              <details id="iso-quiz-box" class="advanced-box card" hidden>
+                <summary>ISO Compliance Header &amp; Interactive Quiz Generator</summary>
+                <div class="advanced-body">
+                  <div class="field-row">
+                    <div class="field">
+                      <label for="iso-doc-id">Document ID</label>
+                      <input type="text" id="iso-doc-id" placeholder="SOP-2026-001" />
+                    </div>
+                    <div class="field">
+                      <label for="iso-version">Version</label>
+                      <input type="text" id="iso-version" value="1.0" />
+                    </div>
+                    <div class="field">
+                      <label for="iso-owner">Owner</label>
+                      <input type="text" id="iso-owner" placeholder="Operations Team" />
+                    </div>
+                    <div class="field">
+                      <label for="iso-date">Effective Date</label>
+                      <input type="text" id="iso-date" placeholder="2026-11-24" />
+                    </div>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label for="iso-prereq">Prerequisites</label>
+                      <input type="text" id="iso-prereq" placeholder="Admin privileges, local Ollama..." />
+                    </div>
+                    <div class="field">
+                      <label for="iso-warnings">Safety / Security Warnings</label>
+                      <input type="text" id="iso-warnings" placeholder="Never paste live API secrets..." />
+                    </div>
+                  </div>
+                  <div class="action-row">
+                    <button type="button" id="btn-save-iso" class="btn btn-primary btn-sm">Save ISO Header</button>
+                    <button type="button" id="btn-gen-quiz" class="btn btn-accent btn-sm">Generate 3-Question Quiz (Ollama)</button>
+                  </div>
+                </div>
+              </details>
+
+              <input type="file" id="step-replace-file-input" accept="image/png,image/jpeg" hidden />
+
+              <div id="editor-empty-state" class="card empty-card">
+                <h2>No Session Loaded</h2>
+                <p>Record a new workflow in <strong>Capture Studio</strong> or pick an existing draft or saved workflow from the dropdown above.</p>
+              </div>
+
+              <div id="editor-steps-container" class="steps-editor-list"></div>
+            </div>
+          </section>
+
+          <!-- TAB 3: SAVED WORKFLOWS -->
+          <section id="panel-library" class="tab-panel" role="tabpanel" aria-labelledby="tab-library" hidden="until-found">
+            <div class="panel-surface">
+              <div class="card library-header">
+                <div>
+                  <h2>Workflow Storage &amp; Review Library</h2>
+                  <p class="hint">
+                    Pending drafts live in <code>projects/labguide_studio/sessions/_staging/</code>. Approved guides live in <code>projects/labguide_studio/workflows/</code> (or your chosen destination preset).
+                  </p>
+                </div>
+                <search>
+                  <form class="search-form" id="library-search-form">
+                    <label for="library-search-input">Filter workflows</label>
+                    <input type="search" id="library-search-input" placeholder="Search by title or timestamp..." />
+                  </form>
+                </search>
+              </div>
+
+              <div class="library-section">
+                <div class="section-head">
+                  <h3>Pending Review Drafts (<code>sessions/_staging/</code>)</h3>
+                  <button type="button" class="btn btn-ghost btn-sm" data-open-folder="staging">Open Staging Folder</button>
+                </div>
+                <div id="list-staging" class="workflow-grid"></div>
+              </div>
+
+              <div class="library-section">
+                <div class="section-head">
+                  <h3>Saved Workflows Library (<code>workflows/</code>)</h3>
+                  <button type="button" class="btn btn-ghost btn-sm" data-open-folder="workflows">Open Saved Workflows Folder</button>
+                </div>
+                <div id="list-saved" class="workflow-grid"></div>
+              </div>
+
+              <div class="library-section">
+                <div class="section-head">
+                  <h3>CLI / Legacy Sessions (<code>sessions/</code>)</h3>
+                  <button type="button" class="btn btn-ghost btn-sm" data-open-folder="sessions">Open Sessions Folder</button>
+                </div>
+                <div id="list-legacy" class="workflow-grid"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- TAB 4: SYSTEM READINESS -->
+          <section id="panel-readiness" class="tab-panel" role="tabpanel" aria-labelledby="tab-readiness" hidden="until-found">
+            <div class="panel-surface">
+              <div class="card">
+                <h2>Pre-Flight Activation Checklist</h2>
+                <p class="hint">
+                  Verify everything needed for LabGuide Studio to capture high-DPI coordinates, read UI Automation metadata, redact PII locally, and generate AI step descriptions smoothly.
+                </p>
+                <div id="readiness-grid" class="readiness-grid"></div>
+              </div>
+
+              <div class="card">
+                <h3>Quick Activation Commands</h3>
+                <div class="command-block">
+                  <div class="command-head">
+                    <span>1. Activate Workspace Environment &amp; Launch Studio UI</span>
+                    <button type="button" class="btn btn-sm btn-outline" data-copy-target="cmd-launch">Copy</button>
+                  </div>
+                  <pre id="cmd-launch" role="region" aria-label="Launch LabGuide Studio command" tabindex="0"><code>Set-Location C:\Antigravity_BluePrint_Doc
+.\.venv\Scripts\Activate.ps1
+.\projects\labguide_studio\launch_labguide.ps1</code></pre>
+                </div>
+
+                <div class="command-block">
+                  <div class="command-head">
+                    <span>2. Start Local Ollama &amp; Pull Multimodal Vision Model</span>
+                    <button type="button" class="btn btn-sm btn-outline" data-copy-target="cmd-ollama">Copy</button>
+                  </div>
+                  <pre id="cmd-ollama" role="region" aria-label="Ollama setup command" tabindex="0"><code>ollama serve
+ollama pull gemma4:e4b</code></pre>
+                </div>
+
+                <div class="command-block">
+                  <div class="command-head">
+                    <span>3. Recording Elevated / Admin Apps (Windows UIPI)</span>
+                    <button type="button" class="btn btn-sm btn-outline" data-copy-target="cmd-admin">Copy</button>
+                  </div>
+                  <pre id="cmd-admin" role="region" aria-label="Elevated terminal command" tabindex="0"><code># Right-click Windows Terminal -> Run as Administrator, then:
+Set-Location C:\Antigravity_BluePrint_Doc
+.\.venv\Scripts\python.exe projects\labguide_studio\launcher.py</code></pre>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- TAB 5: HELP & PRO GUIDE -->
+          <section id="panel-help" class="tab-panel" role="tabpanel" aria-labelledby="tab-help" hidden="until-found">
+            <div class="panel-surface">
+              <div id="official-sop-card" class="card showcase-card">
+                <div class="showcase-head">
+                  <div>
+                    <h2>Official Visual &amp; Voice-Narrated Walkthrough</h2>
+                    <p class="hint">
+                      See LabGuide Studio in action with annotated screenshots, editorial comments, embedded offline voice narration, an MP4 video walkthrough, and a live editable workflow inside Step Editor.
+                    </p>
+                  </div>
+                </div>
+                <div class="action-row">
+                  <a id="btn-help-open-html" class="btn btn-primary is-disabled" href="#" target="_blank" rel="noopener" aria-disabled="true">
+                    Open Narrated Visual &amp; Voice Tour (HTML)
+                  </a>
+                  <a id="btn-help-open-video" class="btn btn-accent is-disabled" href="#" target="_blank" rel="noopener" aria-disabled="true">
+                    Watch Narrated Video (MP4)
+                  </a>
+                  <a id="btn-help-open-docx" class="btn btn-outline is-disabled" href="#" aria-disabled="true">
+                    Download Word Guide (.docx)
+                  </a>
+                  <button type="button" id="btn-help-inspect-editor" class="btn btn-outline" disabled>
+                    Inspect Inside Step Editor
+                  </button>
+                </div>
+              </div>
+
+              <section class="accordion card" id="help-accordion" aria-labelledby="help-heading">
+                <div class="accordion-toolbar">
+                  <div>
+                    <h2 id="help-heading">LabGuide Studio Complete Help Guide &amp; Recommendations</h2>
+                    <p class="hint">Everything you need to record smoothly, review drafts, edit steps/images, and manage saved workflows.</p>
+                  </div>
+                  <button type="button" class="btn btn-outline" commandfor="help-accordion" command="--toggle-all" aria-expanded="false">
+                    <span class="expand">Expand all</span>
+                    <span class="collapse">Collapse all</span>
+                  </button>
+                </div>
+
+                <details open>
+                  <summary>1. How to Use LabGuide Studio (Step-by-Step)</summary>
+                  <div class="details-body">
+                    <ol>
+                      <li><strong>Check System Readiness:</strong> Confirm the top-right status pills show Ollama Online (or plan to use Instant Draft + offline UIA fallback) and all Python packages ready.</li>
+                      <li><strong>Configure Capture Studio:</strong> Enter your <em>Guide Title</em>, keep <em>3-Second Countdown</em> and <em>Instant Draft &rarr; Review First</em> enabled, and click <strong>Start Recording</strong>.</li>
+                      <li><strong>Perform Your Workflow:</strong> Switch to the target Windows 11 app during the 3-second countdown. Left-click UI controls normally and use shortcuts (<code>Ctrl+S/C/V/Z/F</code>). Press <kbd>Ctrl+Alt+P</kbd> to pause before typing passwords.</li>
+                      <li><strong>Stop &amp; Review:</strong> Press <kbd>Ctrl+Alt+S</kbd> (or click <strong>Stop &amp; Review</strong>). You are taken straight to the <strong>Review &amp; Step Editor</strong> tab.</li>
+                      <li><strong>Prune, Blur, AI-Compile &amp; Decide:</strong> Delete stray clicks, reorder steps, manually blur extra details, optionally click <strong>Run AI Descriptions on All Steps</strong>, then choose <strong>Save Workflow to Library</strong> or <strong>Discard Draft</strong>.</li>
+                    </ol>
+                  </div>
+                </details>
+
+                <details>
+                  <summary>2. What Needs to Be Activated for Smooth Runs</summary>
+                  <div class="details-body">
+                    <ul>
+                      <li><strong>Workspace Virtual Environment (<code>.venv</code>):</strong> Holds <code>pynput</code>, <code>mss</code>, <code>Pillow</code>, <code>uiautomation</code>, <code>requests</code>, <code>rapidocr-onnxruntime</code>, <code>kokoro-onnx</code>, <code>soundfile</code>, and <code>pypdf</code> on Python 3.11.</li>
+                      <li><strong>Local Ollama Service (<code>localhost:11434</code>):</strong> Required only if you want VLM-written natural language steps (<code>gemma4:e4b</code> or <code>qwen2.5-vl:7b</code>). Launching via the Desktop shortcut starts Ollama automatically; deterministic UIA fallback still works with zero errors if offline.</li>
+                      <li><strong>Per-Monitor V2 DPI Awareness:</strong> Handled automatically by <code>labguide_engine.py</code> and <code>web_server.py</code> via <code>SetProcessDpiAwareness(2)</code>.</li>
+                      <li><strong>Administrator Mode (Only for Elevated Windows):</strong> Windows UIPI blocks non-admin hooks from capturing clicks inside elevated Admin windows (Registry Editor, Task Manager, Defender Firewall). Launch Studio from an elevated PowerShell when documenting those tools.</li>
+                      <li><strong>RX 6650 XT 8 GB VRAM Headroom:</strong> Keep at least 1,200 MB VRAM free before running large Ollama vision models. RapidOCR, Kokoro-82M TTS, and FFmpeg video rendering run strictly on CPU (0 MB VRAM).</li>
+                    </ul>
+                  </div>
+                </details>
+
+                <details>
+                  <summary>3. Where Workflows Are Saved &amp; File Structure</summary>
+                  <div class="details-body">
+                    <ul>
+                      <li><strong>Staging Drafts (Pending Review):</strong> <code>projects/labguide_studio/sessions/_staging/&lt;timestamp&gt;/</code></li>
+                      <li><strong>Saved Workflows Library (Approved):</strong> <code>projects/labguide_studio/workflows/&lt;timestamp_slug&gt;/</code> (or <code>directives/sops/</code> or <code>knowledge/guides/</code> if selected).</li>
+                      <li><strong>Files Inside Every Workflow Folder:</strong>
+                        <ul>
+                          <li><code>guide.md</code> — Portable Markdown SOP with relative <code>./assets/*.png</code> images and collapsible full-screen context.</li>
+                          <li><code>guide.html</code> — 100% self-contained single-file dark-mode HTML guide (Base64 images embedded; safe to email or drop into SharePoint/Slack without broken links).</li>
+                          <li><code>session.db</code> — SQLite database storing step coordinates, UIA metadata, ISO controls, and edited text.</li>
+                          <li><code>assets/step_XXX_crop.png</code> &amp; <code>step_XXX_full.png</code> — Annotated and redacted PNG screenshots.</li>
+                          <li><code>assets/raw/step_XXX_raw.png</code> — Untouched original capture so you can always click <strong>Reset from Raw</strong>.</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
+                </details>
+
+                <details>
+                  <summary>4. How to Review &amp; Edit Workflows (Built-In Studio + External Tools)</summary>
+                  <div class="details-body">
+                    <p><strong>Built-In Step Editor (Best First Pass):</strong></p>
+                    <ul>
+                      <li>Edit any step's <em>Title</em>, <em>Instruction</em>, and <em>Tip / Note</em> directly and click <strong>Save Step</strong> (regenerates <code>guide.md</code> &amp; <code>guide.html</code> instantly).</li>
+                      <li>Click <strong>Move Up / Down</strong> or <strong>Delete Step</strong> to clean up misclicks (steps automatically renumber <code>1..N</code>).</li>
+                      <li>Click <strong>Manual Blur / Redact</strong> to drag rectangles over any missed sensitive text on cropped or full screenshots, or <strong>Reset from Raw</strong> to undo edits from the untouched raw PNG.</li>
+                      <li>Click <strong>AI Rewrite Step</strong> on just one step, or <strong>Run AI Descriptions on All Steps</strong> once your step list is clean.</li>
+                    </ul>
+                    <p><strong>Recommended External Editors (Optional Polish):</strong></p>
+                    <ul>
+                      <li><strong>Markdown &amp; Docs:</strong> Open <code>guide.md</code> in <em>Antigravity IDE / VS Code</em> (live Markdown preview), <em>Obsidian</em>, or <em>Typora</em>.</li>
+                      <li><strong>Advanced Screenshot Markup (Arrows, Callouts, Step Numbers):</strong> Open <code>assets/step_XXX_crop.png</code> in <em>ShareX Image Editor</em>, <em>Paint.NET</em>, or <em>Windows Snipping Tool</em>, then click <strong>Update Title</strong> or <strong>Save Workflow</strong> to refresh <code>guide.html</code>.</li>
+                      <li><strong>Export to PDF:</strong> Open <code>guide.html</code> in Edge/Chrome and press <kbd>Ctrl+P</kbd> &rarr; <em>Save as PDF</em>.</li>
+                    </ul>
+                  </div>
+                </details>
+
+                <details>
+                  <summary>5. Overlooked Options &amp; Pro Recommendations</summary>
+                  <div class="details-body">
+                    <ul>
+                      <li><strong>Self-Click Filtering &amp; Floating Mini-HUD:</strong> LabGuide Studio automatically ignores clicks on <em>LabGuide Studio</em> and displays a compact always-on-top Mini-HUD (hidden from Windows 11 screen capture) so you always see your step count and Pause/Stop controls.</li>
+                      <li><strong>Password-Aware Typing Coalescer:</strong> Printable typing between clicks is buffered into a single <code>Fill [Field]</code> step—and UIA password fields or <code>token/secret/key</code> inputs automatically mask as <code>••••••••</code> and blur the control rectangle.</li>
+                      <li><strong>Use "Instant Draft &rarr; Review First" + <code>keep_alive="0"</code>:</strong> Prune accidental clicks before invoking Ollama, and keep <code>keep_alive="0"</code> enabled so your ~6.13 GB model unloads from RX 6650 XT VRAM right after compilation.</li>
+                      <li><strong>Multi-Format Exports:</strong> From Review or Saved Workflows, export HTML, Word <code>.docx</code>, PDF, SCORM 1.2 LMS <code>.zip</code>, Offline Bundle <code>.zip</code>, <code>.srt</code> captions, or a UIA-grounded <code>replay.py</code> automation script.</li>
+                      <li><strong>Watch Out for Windows UIPI (Admin Apps):</strong> If clicks inside Device Manager, Services, or Firewall stop logging, restart the Studio server from an Administrator terminal.</li>
+                    </ul>
+                  </div>
+                </details>
+              </section>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer class="studio-footer">
+      <div class="footer-brand">
+        <img src="/brand/logo.png" alt="" width="24" height="24" class="footer-logo" />
+        <span><strong>LabGuide Studio</strong> v3.0.0 &middot; &copy; 2026 <strong>Jesse in the Lab</strong> &middot; MIT License &middot; 100% Local &amp; Private</span>
+      </div>
+      <div class="footer-actions">
+        <button type="button" id="btn-footer-about" class="btn btn-ghost btn-sm">About, License &amp; Attributions</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast Status Region -->
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+  <!-- Native Modal Dialog: Confirm Discard / Delete -->
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+    <h1 id="confirm-title">Discard this draft?</h1>
+    <p id="confirm-message">
+      This permanently deletes the staging session folder, SQLite database, and screenshots from disk.
+    </p>
+    <form method="dialog" class="dialog-actions">
+      <button type="submit" value="confirm" class="btn btn-danger">Yes, Delete Permanently</button>
+      <button type="submit" value="cancel" class="btn btn-secondary" autofocus>Cancel / Keep Draft</button>
+    </form>
+  </dialog>
+
+  <!-- Native Modal Dialog: Manual Redaction Canvas Studio -->
+  <dialog id="blur-dialog" closedby="any" aria-labelledby="blur-title">
+    <div class="dialog-header">
+      <h1 id="blur-title">Manual Screenshot Redaction</h1>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-close-blur">Close</button>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="blur-mode">Redaction Style</label>
+        <select id="blur-mode" class="brand-select">
+          <button type="button"><selectedcontent></selectedcontent></button>
+          <option value="blur" selected>Gaussian Blur (Soft Privacy Mask)</option>
+          <option value="blackout">Solid Blackout (Opaque Redaction Bar)</option>
+        </select>
+      </div>
+      <p class="hint">
+        Click and drag across sensitive names, project codes, or keys. Click <strong>Apply Redaction</strong> to write the PNG and refresh <code>guide.html</code>.
+      </p>
+    </div>
+    <div class="blur-canvas-wrap">
+      <canvas id="blur-canvas"></canvas>
+    </div>
+    <div class="dialog-footer">
+      <span id="blur-box-count" class="hint">0 redaction regions drawn</span>
+      <div class="dialog-actions">
+        <button type="button" id="btn-blur-clear" class="btn btn-outline">Clear Boxes</button>
+        <button type="button" id="btn-blur-apply" class="btn btn-primary">Apply Redaction</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Native Modal Dialog: Markdown Source & Copy -->
+  <dialog id="md-dialog" closedby="any" aria-labelledby="md-title">
+    <div class="dialog-header">
+      <h1 id="md-title">Compiled Markdown (guide.md)</h1>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-close-md">Close</button>
+    </div>
+    <pre id="md-preview-code" class="md-pre" role="region" aria-label="Markdown source preview" tabindex="0"><code></code></pre>
+    <div class="dialog-footer">
+      <button type="button" id="btn-open-md-os" class="btn btn-outline">Open guide.md in Default Editor</button>
+      <button type="button" id="btn-copy-md" class="btn btn-primary">Copy Markdown</button>
+    </div>
+  </dialog>
+
+  <!-- Native Modal Dialog: Custom Avatar Registration -->
+  <dialog id="avatar-dialog" closedby="any" aria-labelledby="avatar-dialog-title">
+    <div class="dialog-header">
+      <h1 id="avatar-dialog-title">Register Custom Presenter Avatar</h1>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-close-avatar">Close</button>
+    </div>
+    <div class="form-stack">
+      <div class="field-row">
+        <div class="field">
+          <label for="avatar-name">Presenter Name</label>
+          <input type="text" id="avatar-name" placeholder="e.g., Jordan" />
+        </div>
+        <div class="field">
+          <label for="avatar-role">Role / Title</label>
+          <input type="text" id="avatar-role" value="Training Lead" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="avatar-file-input">Portrait Image (PNG / JPG)</label>
+        <input type="file" id="avatar-file-input" accept="image/png,image/jpeg" />
+      </div>
+      <label class="checkbox-row" for="avatar-consent-check">
+        <input type="checkbox" id="avatar-consent-check" />
+        <span>I confirm I own this portrait or have explicit consent to use this likeness locally.</span>
+      </label>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" id="btn-upload-avatar" class="btn btn-primary">Save Avatar to Manifest</button>
+    </div>
+  </dialog>
+
+  <!-- Native Modal Dialog: About, Ownership & Licensing -->
+  <dialog id="about-dialog" closedby="any" aria-labelledby="about-dialog-title">
+    <div class="dialog-header">
+      <div class="about-head">
+        <img src="/brand/logo.png" alt="Jesse in the Lab logo" width="44" height="44" class="brand-logo-sm" />
+        <div>
+          <h1 id="about-dialog-title">LabGuide Studio</h1>
+          <div id="about-subtitle" class="hint">Version 3.0.0 &middot; Jesse in the Lab</div>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-close-about">Close</button>
+    </div>
+    <div id="about-body" class="about-body"></div>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>
